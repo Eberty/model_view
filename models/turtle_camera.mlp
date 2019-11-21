@@ -1,0 +1,19 @@
+<!DOCTYPE MeshLabDocument>
+<MeshLabProject>
+ <MeshGroup>
+  <MLMesh label="turtle.obj" filename="turtle.obj">
+   <MLMatrix44>
+1 0 0 0 
+0 1 0 0 
+0 0 1 0 
+0 0 0 1 
+</MLMatrix44>
+  </MLMesh>
+ </MeshGroup>
+ <RasterGroup>
+  <MLRaster label="turtle_bottom_view.png">
+   <VCGCamera TranslationVector="-0.877269 -3.96248 -3.95662 1" LensDistortion="0 0" ViewportPx="1080 1920" PixelSizeMm="0.0177851 0.0177851" CenterPx="540 960" FocalMm="26.6776" RotationMatrix="-0.179728 -0.652104 0.736517 0 0.967132 -0.254032 0.0110872 0 0.179869 0.714302 0.676328 0 0 0 0 1 "/>
+   <Plane semantic="" fileName="turtle_bottom_view.png"/>
+  </MLRaster>
+ </RasterGroup>
+</MeshLabProject>

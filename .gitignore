@@ -1,0 +1,3 @@
+build/*
+.vscode/*
+model_view

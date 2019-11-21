@@ -17,13 +17,11 @@ void main() {
 
   vec4 projColor = texture2D(projectionMap, finalCoord + vec2(0.5, 0.5));
   vec4 modelColor = texture2D(originalTexture, texCoord.st);
-  bool modelColorSet = false;
 
-  if (projColor.a == 0.0 || projCoord.q <= 0.0 || dp > 0.0) {
+  if (projColor.a == 0.0 || projCoord.q <= 0.0 || dp >= 0.0) {
     gl_FragColor = modelColor;
-    modelColorSet = true;
-  } else if (dp < 0.0 && dp > -10.0 && projColor.a != 0 && modelColorSet == false) {
-    gl_FragColor = mix(texture2D(originalTexture, texCoord.st), texture2D(projectionMap, finalCoord + vec2(0.5, 0.5)), -dp/10);
+  } else if (projColor.a == 0.0 || projCoord.q <= 0.0 || (dp > -4.0 && dp < 0)) {
+     gl_FragColor = mix(modelColor, projColor, abs(dp/8));
   } else {
     gl_FragColor = projColor;
   }

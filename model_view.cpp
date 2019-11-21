@@ -34,9 +34,10 @@ std::vector<std::vector<float>> camera_description(7);
 std::vector<std::string> plane_description(2);
 
 bool readMlpFile(const std::string& file_path) {
-  size_t found;
+  std::size_t found;
   std::string line;
   std::ifstream file(file_path);
+
   if (file.is_open()) {
     while (getline(file, line)) {
       if (line.find("MLRaster") != std::string::npos) break;
@@ -48,10 +49,10 @@ bool readMlpFile(const std::string& file_path) {
       } else if (line.find("<VCGCamera") != std::string::npos) {
         std::vector<std::string> VCGCamera = {"TranslationVector=", "LensDistortion=", "ViewportPx=",    "PixelSizeMm=",
                                               "CenterPx=",          "FocalMm=",        "RotationMatrix="};
-        for (size_t i = 0; i < VCGCamera.size(); i++) {
+        for (std::size_t i = 0; i < VCGCamera.size(); i++) {
           found = line.find(VCGCamera[i]);
           if (found != std::string::npos) {
-            size_t j = found + VCGCamera[i].size() + 1, k = 0;
+            std::size_t j = found + VCGCamera[i].size() + 1, k = 0;
             for (; j < line.size() && line[j] != '\"'; j++, k++) {
             }
             std::istringstream is(line.substr(found + VCGCamera[i].size() + 1, k));
@@ -60,10 +61,10 @@ bool readMlpFile(const std::string& file_path) {
         }
       } else if (line.find("<Plane") != std::string::npos) {
         std::vector<std::string> Plane = {"semantic=", "fileName="};
-        for (size_t i = 0; i < Plane.size(); i++) {
+        for (std::size_t i = 0; i < Plane.size(); i++) {
           found = line.find(Plane[i]);
           if (found != std::string::npos) {
-            size_t j = found + Plane[i].size() + 1, k = 0;
+            std::size_t j = found + Plane[i].size() + 1, k = 0;
             for (; j < line.size() && line[j] != '\"'; j++, k++) {
             }
             plane_description[i] = line.substr(found + Plane[i].size() + 1, k);
@@ -103,11 +104,11 @@ std::string baseDirectory(const std::string& file_path) {
 
 osg::StateSet* createProjectorState(const std::string& file) {
   if (readMlpFile(file) && camera_description[CameraIndex::RotationMatrix].size() >= 16 &&
-      camera_description[CameraIndex::FocalMm].size() && camera_description[CameraIndex::TranslationVector].size()) {
-    double transform[4][4];
+      plane_description[PlaneIndex::fileName].size()) {
+    double mat_rotation[4][4];
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 4; j++) {
-        transform[i][j] = camera_description[CameraIndex::RotationMatrix][(4 * i) + j];
+        mat_rotation[i][j] = camera_description[CameraIndex::RotationMatrix][(4 * i) + j];
       }
     }
 
@@ -141,7 +142,7 @@ osg::StateSet* createProjectorState(const std::string& file) {
       stateset->setTextureMode(texture_unit, GL_TEXTURE_GEN_Q, osg::StateAttribute::ON);
 
       /* 2. Load the Shaders */
-      osg::ref_ptr<osg::Program> program(new osg::Program);
+      osg::ref_ptr<osg::Program> program(new osg::Program());
 
       osg::ref_ptr<osg::Shader> vertex_shader(
           osg::Shader::readShaderFile(osg::Shader::VERTEX, "shaders/VertexShader.glsl"));
@@ -159,34 +160,41 @@ osg::StateSet* createProjectorState(const std::string& file) {
       stateset->setRenderingHint(osg::StateSet::RenderingHint::TRANSPARENT_BIN);
 
       /* 4. set Texture matrix*/
-      osg::TexMat* tex_mat = new osg::TexMat;
+      osg::ref_ptr<osg::TexMat> tex_mat = new osg::TexMat();
       osg::Matrix mat;
 
       // TODO(Eberty)
-      osg::Vec3d position(camera_description[CameraIndex::TranslationVector][0],
+      osg::Vec3d position(-camera_description[CameraIndex::TranslationVector][0],
                           camera_description[CameraIndex::TranslationVector][1],
                           -camera_description[CameraIndex::TranslationVector][2]);
 
-      // osg::Quat orientation;
-      // orientation.set(osg::Matrix(*transform));
-      float roll = atan2(transform[2][1], transform[2][2]);
-      float pitch = asin(transform[2][0]);
-      float yaw = -atan2(transform[1][0], transform[0][0]);
-      osg::Vec3 direction(roll, pitch, yaw);
-      osg::ref_ptr<osg::Uniform> normal_uniform = new osg::Uniform("projectionNormal", direction);
+      osg::Quat orientation;
+      orientation.set(osg::Matrixd::rotate(osg::PI, osg::Y_AXIS) * osg::Matrixd(*mat_rotation));
+
+      osg::Matrixd matrix;
+      matrix.setTrans(position);
+      matrix.setRotate(orientation);
+      matrix.invert(matrix);
+      const osg::Matrixd WORLD2OSGCAM = osg::Matrixd::rotate(osg::PI_2, osg::Y_AXIS) * osg::Matrixd::rotate(osg::PI_4/2, osg::X_AXIS);
+      osg::Matrixd m = matrix * WORLD2OSGCAM;
+      osg::Vec3 eye, center, up;
+      m.getLookAt(eye, center, up);
+
+      float roll = atan2(mat_rotation[2][1], mat_rotation[2][2]);
+      float pitch = asin(mat_rotation[2][0]);
+      float yaw = -atan2(mat_rotation[1][0], mat_rotation[0][0]);
+      osg::ref_ptr<osg::Uniform> normal_uniform = new osg::Uniform("projectionNormal", osg::Vec3(roll, pitch, yaw));
       stateset->addUniform(normal_uniform.get());
 
-      float projector_angle = camera_description[CameraIndex::FocalMm][0] * 2;
-      osg::Vec3d up(1.0f, 0.0f, 0.0f);
-      up = (direction ^ up) ^ direction;
-      up.normalize();
-      osg::Matrixd look_at = osg::Matrixd::lookAt(position, osg::Vec3d(direction), up);
-      osg::Matrixd perspective = osg::Matrixd::perspective(projector_angle, 1.0, 0.1, 100);
+      float projector_angle = camera_description[CameraIndex::FocalMm][0] * 3.85;
+      float asp_ratio = camera_description[CameraIndex::ViewportPx][0] / camera_description[CameraIndex::ViewportPx][1];
+
+      osg::Matrixd look_at = osg::Matrixd::lookAt(eye, center, up);
+      osg::Matrixd perspective = osg::Matrixd::perspective(projector_angle, asp_ratio, 0.1, 100);
       mat = look_at * perspective;
 
       tex_mat->setMatrix(mat);
-      stateset->setTextureAttributeAndModes(texture_unit, tex_mat, osg::StateAttribute::ON);
-
+      stateset->setTextureAttributeAndModes(texture_unit, tex_mat.get(), osg::StateAttribute::ON);
       return stateset.release();
     } else {
       std::cout << "Error on open image: " << plane_description[PlaneIndex::fileName] << std::endl;

@@ -175,18 +175,20 @@ osg::StateSet* createProjectorState(const std::string& file) {
       matrix.setTrans(position);
       matrix.setRotate(orientation);
       matrix.invert(matrix);
-      const osg::Matrixd WORLD2OSGCAM = osg::Matrixd::rotate(osg::PI_2, osg::Y_AXIS) * osg::Matrixd::rotate(osg::PI_4/2, osg::X_AXIS);
+      const osg::Matrixd WORLD2OSGCAM = osg::Matrixd::rotate(osg::PI_4/32, osg::Y_AXIS) * osg::Matrixd::rotate(osg::PI_4/128, osg::Y_AXIS) * osg::Matrixd::rotate(osg::PI_2, osg::Y_AXIS) *
+                                        osg::Matrixd::rotate(-osg::PI_4/32, osg::X_AXIS) * osg::Matrixd::rotate(osg::PI_4/2, osg::X_AXIS);
       osg::Matrixd m = matrix * WORLD2OSGCAM;
       osg::Vec3 eye, center, up;
       m.getLookAt(eye, center, up);
 
-      float roll = atan2(mat_rotation[2][1], mat_rotation[2][2]);
-      float pitch = asin(mat_rotation[2][0]);
-      float yaw = -atan2(mat_rotation[1][0], mat_rotation[0][0]);
+      osg::Matrixd mtr =  osg::Matrixd::rotate(-osg::PI_4, osg::X_AXIS) * osg::Matrixd::rotate(osg::PI_4/2, osg::X_AXIS) * osg::Matrixd(*mat_rotation);
+      float roll = atan2(mtr(2, 1), mtr(2, 2));
+      float pitch = asin(mtr(2, 0));
+      float yaw = -atan2(mtr(1, 0), mtr(0, 0));
       osg::ref_ptr<osg::Uniform> normal_uniform = new osg::Uniform("projectionNormal", osg::Vec3(roll, pitch, yaw));
       stateset->addUniform(normal_uniform.get());
 
-      float projector_angle = camera_description[CameraIndex::FocalMm][0] * 3.85;
+      float projector_angle = camera_description[CameraIndex::FocalMm][0] * 3.87;
       float asp_ratio = camera_description[CameraIndex::ViewportPx][0] / camera_description[CameraIndex::ViewportPx][1];
 
       osg::Matrixd look_at = osg::Matrixd::lookAt(eye, center, up);

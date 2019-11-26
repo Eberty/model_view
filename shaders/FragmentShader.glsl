@@ -18,13 +18,22 @@ void main() {
   vec4 projColor = texture2D(projectionMap, finalCoord + vec2(0.5, 0.5));
   vec4 modelColor = texture2D(originalTexture, texCoord.st);
 
+  vec4 finalColor;
   if (projColor.a == 0.0 || projCoord.q <= 0.0 || dp >= 0.0) {
-    gl_FragColor = modelColor;
-  } else if (projColor.a == 0.0 || projCoord.q <= 0.0 || (dp > -4.0 && dp < 0)) {
-     gl_FragColor = mix(modelColor, projColor, abs(dp/8));
+    finalColor = modelColor;
+  } else if (projColor.a == 0.0 || projCoord.q <= 0.0 || (dp > -10.0 && dp < 0)) {
+    if (modelColor.rgb != vec3(255 / 255.0, 127 / 255.0, 39 / 255.0)) {
+      finalColor = mix(modelColor, projColor, abs(dp / 10.0));
+   } else {
+     finalColor = projColor;
+   }
   } else {
-    gl_FragColor = projColor;
+    finalColor = projColor;
   }
 
-  gl_FragColor *= gl_Color;
+  if (finalColor.rgb == vec3(255 / 255.0, 127 / 255.0, 39 / 255.0)) {
+    discard;
+  }
+
+  gl_FragColor = finalColor * gl_Color;
 }

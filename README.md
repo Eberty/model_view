@@ -72,6 +72,7 @@ After, you can produce the file in the following way:
     * Press **Ctrl + H** to start from a initial point of view
     * You can use **Mouse right button** to rotate, **Ctrl + Mouse right button** to move and **Shift + Mouse right button** to scale
     * Find a good alignment of an image with respect to the 3d model
+    * Select **Filters** > **Camera** > **Image alignment: Mutual Information** > Click on **Get shot** and **Apply** (Do this more than once for best results)
     * If in doubt, see: [Raster Layers: Set Raster Camera](https://www.youtube.com/watch?v=298OJABhkYs) and [Color Projection: Mutual Information, Basic](https://www.youtube.com/watch?v=Pv6_qFIr7gs)
 5. Select **Filters** > **Camera** > **Set Raster Camera** > Click on **Get shot** and **Apply**
 6. Select **File** > **Save Project** > "Choose a name and a folder and save the file"

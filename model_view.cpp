@@ -159,6 +159,11 @@ osg::StateSet* createProjectorState(const std::string& file) {
       stateset->addUniform(tex_uniform.get());
       stateset->setRenderingHint(osg::StateSet::RenderingHint::TRANSPARENT_BIN);
 
+      float center_x = camera_description[CameraIndex::CenterPx][0] / camera_description[CameraIndex::ViewportPx][0];
+      float center_y = camera_description[CameraIndex::CenterPx][1] / camera_description[CameraIndex::ViewportPx][1];
+      osg::ref_ptr<osg::Uniform> projective_center = new osg::Uniform("projectiveCenter", osg::Vec2(center_x, center_y));
+      stateset->addUniform(projective_center.get());
+
       /* 4. set Texture matrix*/
       osg::ref_ptr<osg::TexMat> tex_mat = new osg::TexMat();
       osg::Matrix mat;

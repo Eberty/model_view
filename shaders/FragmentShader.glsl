@@ -3,6 +3,7 @@
 uniform sampler2D projectionMap;
 uniform sampler2D originalTexture;
 uniform vec3 projectionNormal;
+uniform vec2 projectiveCenter;
 
 varying vec4 texCoord;
 varying vec4 projCoord;
@@ -15,7 +16,7 @@ void main() {
              modelNormal.y * projectionNormal.y +
              modelNormal.z * projectionNormal.z;
 
-  vec4 projColor = texture2D(projectionMap, finalCoord + vec2(0.5, 0.5));
+  vec4 projColor = texture2D(projectionMap, finalCoord + projectiveCenter);
   vec4 modelColor = texture2D(originalTexture, texCoord.st);
 
   vec4 finalColor;
